@@ -216,3 +216,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Assignment data and outputs (not for GitHub)
+/data/*.csv
+/predictions.npy
+report.pdf
