@@ -8,21 +8,23 @@ import numpy as np
 
 
 def init_params(layer_sizes: list[int], seed: int | None = None) -> list[dict]:
-    """Initialize weights and biases for a fully connected network.
+    """Initialize weights and biases for a fully connected network using
+    Xavier (Glorot) uniform initialization: W ~ Uniform(-limit, limit) with
+    limit = sqrt(6 / (n_in + n_out)), b = 0.
 
     layer_sizes includes the input dimension and the output dimension,
     e.g. [n_features, 16, 8, 1].
     """
     rng = np.random.default_rng(seed)
     params = []
-    for n_in, n_out in zip(layer_sizes[:-1], layer_sizes[1:]):
-        scale = np.sqrt(2.0 / n_in)
-        params.append(
-            {
-                "W": rng.normal(0.0, scale, size=(n_in, n_out)),
-                "b": np.zeros(n_out),
-            }
-        )
+    n_layers = len(layer_sizes) - 1
+    for i in range(n_layers):
+        n_in = layer_sizes[i]
+        n_out = layer_sizes[i + 1]
+        limit = np.sqrt(6.0 / (n_in + n_out))
+        W = rng.uniform(-limit, limit, size=(n_in, n_out))
+        b = np.zeros(n_out)
+        params.append({"W": W, "b": b})
     return params
 
 

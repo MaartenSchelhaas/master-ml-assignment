@@ -1,28 +1,34 @@
-"""Public API: the MLP class and its hyperparameters. This is what
-scripts/*.py and hyperparameter tuning code call, everything else in this
-package is an implementation detail behind it."""
-
-from dataclasses import dataclass
+"""Public API: the MLP class. This is what scripts/*.py and hyperparameter
+tuning code call, everything else in this package is an implementation
+detail behind it. Plain constructor kwargs, no config object, src stays
+agnostic to however external code chooses to bundle/sweep hyperparameters."""
 
 import numpy as np
 
 from ml_assignment import losses, mlp, optim
 
 
-@dataclass
-class MLPConfig:
-    hidden_sizes: list[int]
-    lr: float
-    n_epochs: int
-    loss: str  # "brier" or "econ"
-    w_default: float = 3.0
-    seed: int | None = None
-
-
 class MLP:
-    def __init__(self, config: MLPConfig):
-        self.config = config
-        self.params: list[dict] | None = None
+    def __init__(
+        self,
+        input_dim: int,
+        hidden_sizes: list[int],
+        lr: float,
+        n_epochs: int,
+        loss: str,  # "brier" or "econ"
+        w_default: float = 3.0,
+        seed: int | None = None,
+    ):
+        self.input_dim = input_dim
+        self.hidden_sizes = hidden_sizes
+        self.lr = lr
+        self.n_epochs = n_epochs
+        self.loss = loss
+        self.w_default = w_default
+        self.seed = seed
+
+        layer_sizes = [input_dim, *hidden_sizes, 1]
+        self.params: list[dict] = mlp.init_params(layer_sizes, seed=seed)
 
     def fit(
         self,
@@ -35,19 +41,20 @@ class MLP:
         epoch over all of X_tr (no minibatching for now, that's a later
         addition if speed or memory become an issue). Records train loss,
         and val loss if X_val/y_val are given, after every epoch using
-        losses.brier_score or losses.economic_loss to match config.loss.
+        losses.brier_score or losses.economic_loss to match self.loss.
         Returns {"train_loss": [...], "val_loss": [...]}."""
-        layer_sizes = [X_tr.shape[1], *self.config.hidden_sizes, 1]
-        self.params = mlp.init_params(layer_sizes, seed=self.config.seed)
+        assert X_tr.shape[1] == self.input_dim, (
+            f"X_tr has {X_tr.shape[1]} features, model was built for {self.input_dim}"
+        )
 
         history: dict = {"train_loss": [], "val_loss": []}
-        weights = losses.sample_weights(y_tr, self.config.loss, self.config.w_default)
-        score_fn = losses.brier_score if self.config.loss == "brier" else losses.economic_loss
+        weights = losses.sample_weights(y_tr, self.loss, self.w_default)
+        score_fn = losses.brier_score if self.loss == "brier" else losses.economic_loss
 
-        for _ in range(self.config.n_epochs):
+        for _ in range(self.n_epochs):
             p_hat, cache = mlp.forward(self.params, X_tr)
             grads = mlp.backward(self.params, cache, y_tr, weights)
-            optim.sgd_step(self.params, grads, self.config.lr)
+            optim.sgd_step(self.params, grads, self.lr)
 
             history["train_loss"].append(score_fn(y_tr, p_hat))
             if X_val is not None and y_val is not None:
