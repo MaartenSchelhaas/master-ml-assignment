@@ -221,3 +221,6 @@ __marimo__/
 /data/*.csv
 /predictions.npy
 report.pdf
+
+# Local planning docs
+/docs/
