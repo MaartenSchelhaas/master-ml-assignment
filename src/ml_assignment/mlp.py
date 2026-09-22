@@ -26,19 +26,37 @@ def init_params(layer_sizes: list[int], seed: int | None = None) -> list[dict]:
     return params
 
 
+def relu(z: np.ndarray) -> np.ndarray:
+    """Elementwise ReLU, used for every hidden layer's activation."""
+    raise NotImplementedError
+
+
+def relu_grad(z: np.ndarray) -> np.ndarray:
+    """Elementwise derivative of ReLU at the pre-activation z, 1 where
+    z > 0 and 0 otherwise."""
+    raise NotImplementedError
+
+
+def sigmoid(z: np.ndarray) -> np.ndarray:
+    """Elementwise sigmoid via scipy.special.expit, used on the output
+    unit so predictions are valid probabilities."""
+    raise NotImplementedError
+
+
 def forward(params: list[dict], X: np.ndarray) -> tuple[np.ndarray, list[dict]]:
-    """Run the forward pass. Returns predicted probabilities and cached
-    activations needed for backprop."""
+    """Run the forward pass: ReLU on every hidden layer, sigmoid on the
+    output unit. Returns (p_hat, cache), where p_hat has shape (n,) and
+    cache is a list with one dict per layer holding whatever backward
+    needs to recompute that layer's gradients, e.g. the layer's input,
+    pre-activation, and activation."""
     raise NotImplementedError
 
 
 def backward(
     params: list[dict], cache: list[dict], y: np.ndarray, weights: np.ndarray
 ) -> list[dict]:
-    """Backpropagate the weighted squared-error loss to get gradients."""
-    raise NotImplementedError
+    """Backpropagate the weighted squared-error loss
+    L = mean(weights * (y - p_hat) ** 2) to get gradients.
 
-
-def sgd_update(params: list[dict], grads: list[dict], lr: float) -> None:
-    """In-place parameter update."""
+    """
     raise NotImplementedError
