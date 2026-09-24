@@ -48,12 +48,22 @@ class MLP:
         )
 
         history: dict = {"train_loss": [], "val_loss": []}
-        weights = losses.sample_weights(y_tr, self.loss, self.w_default)
-        score_fn = losses.brier_score if self.loss == "brier" else losses.economic_loss
+
+        def score_fn(y, p_hat):
+            if self.loss == "brier":
+                return losses.brier_score(y, p_hat)
+            else:
+                return losses.economic_loss(y, p_hat, self.w_default)
+
+        def grad_fn(y, p_hat):
+            if self.loss == "brier":
+                return losses.brier_grad(y, p_hat)
+            else:
+                return losses.economic_grad(y, p_hat, self.w_default)
 
         for _ in range(self.n_epochs):
             p_hat, cache = mlp.forward(self.params, X_tr)
-            grads = mlp.backward(self.params, cache, y_tr, weights)
+            grads = mlp.backward(self.params, cache, y_tr, grad_fn)
             optim.sgd_step(self.params, grads, self.lr)
 
             history["train_loss"].append(score_fn(y_tr, p_hat))
