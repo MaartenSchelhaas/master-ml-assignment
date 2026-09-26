@@ -16,6 +16,7 @@ class MLP:
         input_dim: int,
         hidden_sizes: list[int],
         lr: float,
+        batch_size: int,
         n_epochs: int,
         loss: Loss,
         seed: int | None = None,
@@ -23,6 +24,7 @@ class MLP:
         self.input_dim = input_dim
         self.hidden_sizes = hidden_sizes
         self.lr = lr
+        self.batch_size = batch_size
         self.n_epochs = n_epochs
         self.loss = loss
         self.seed = seed
@@ -39,27 +41,60 @@ class MLP:
         X_val: np.ndarray | None = None,
         y_val: np.ndarray | None = None,
     ) -> dict:
-        """Full-batch gradient descent: one forward/backward/update per
-        epoch over all of X_tr (no minibatching for now, that's a later
-        addition if speed or memory become an issue). Records train loss,
-        and val loss if X_val/y_val are given, after every epoch using
-        self.loss.value. Returns {"train_loss": [...], "val_loss": [...]}."""
+        """Fit the model, with the amount of epoch, and batch size for gradient calculation.
+            Updates after each batch, new epoch once the training data is exhausted
+            (data is reshuffled at the start of every epoch). If
+            batch_size = n, batch gradient descent, if batch_size = 1, sgd, anything
+            in between: mini-batch.
+        Args:
+            X_tr (np.ndarray): Training features, shape (n_train, input_dim).
+            y_tr (np.ndarray): Training labels (0/1), shape (n_train,).
+            X_val (np.ndarray | None, optional): Validation features, shape
+                (n_val, input_dim). When given together with y_val, validation
+                loss is recorded every epoch. Defaults to None.
+            y_val (np.ndarray | None, optional): Validation labels, shape
+                (n_val,). Defaults to None.
+
+        Returns:
+            dict: {"train_loss": per-epoch training loss, "val_loss": per-epoch
+                validation loss, empty if X_val/y_val weren't given}.
+        """
         assert X_tr.shape[1] == self.input_dim, (
             f"X_tr has {X_tr.shape[1]} features, model was built for {self.input_dim}"
         )
 
+        n = X_tr.shape[0]
+        rng = np.random.default_rng(self.seed)
         history: dict = {"train_loss": [], "val_loss": []}
 
         for _ in range(self.n_epochs):
-            p_hat, cache = mlp.forward(
-                self.params, X_tr, self.hidden_activation, self.output_activation
-            )
-            grads = mlp.backward(
-                self.params, cache, y_tr, p_hat, self.loss, self.hidden_activation, self.output_activation
-            )
-            optim.sgd_step(self.params, grads, self.lr)
+            perm = rng.permutation(n)
+            X_shuffled = X_tr[perm]
+            y_shuffled = y_tr[perm]
 
-            history["train_loss"].append(self.loss.value(y_tr, p_hat))
+            start = 0
+            while start < n:
+                end = start + self.batch_size
+                X_batch = X_shuffled[start:end]
+                y_batch = y_shuffled[start:end]
+
+                p_hat_batch, cache = mlp.forward(
+                    self.params, X_batch, self.hidden_activation, self.output_activation
+                )
+                grads = mlp.backward(
+                    self.params,
+                    cache,
+                    y_batch,
+                    p_hat_batch,
+                    self.loss,
+                    self.hidden_activation,
+                    self.output_activation,
+                )
+                optim.sgd_step(self.params, grads, self.lr)
+
+                start = end
+
+            history["train_loss"].append(self.loss.value(y_tr, self.predict_proba(X_tr)))
             if X_val is not None and y_val is not None:
                 history["val_loss"].append(self.loss.value(y_val, self.predict_proba(X_val)))
 
