@@ -5,9 +5,10 @@ agnostic to however external code chooses to bundle/sweep hyperparameters."""
 
 import numpy as np
 
-from ml_assignment import mlp, optim
+from ml_assignment import mlp
 from ml_assignment.activations import ReLU, Sigmoid
 from ml_assignment.losses import Loss
+from ml_assignment.optim import Optimizer
 
 
 class MLP:
@@ -15,7 +16,7 @@ class MLP:
         self,
         input_dim: int,
         hidden_sizes: list[int],
-        lr: float,
+        optimizer: Optimizer,
         batch_size: int,
         n_epochs: int,
         loss: Loss,
@@ -23,7 +24,7 @@ class MLP:
     ):
         self.input_dim = input_dim
         self.hidden_sizes = hidden_sizes
-        self.lr = lr
+        self.optimizer = optimizer
         self.batch_size = batch_size
         self.n_epochs = n_epochs
         self.loss = loss
@@ -32,7 +33,7 @@ class MLP:
         self.output_activation = Sigmoid()
 
         layer_sizes = [input_dim, *hidden_sizes, 1]
-        self.params: list[dict] = mlp.init_params(layer_sizes, seed=seed)
+        self.params: list[dict[str, np.ndarray]] = mlp.init_params(layer_sizes, seed=seed)
 
     def fit(
         self,
@@ -90,7 +91,7 @@ class MLP:
                     self.hidden_activation,
                     self.output_activation,
                 )
-                optim.sgd_step(self.params, grads, self.lr)
+                self.optimizer.step(self.params, grads)
 
                 start = end
 
