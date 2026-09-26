@@ -13,6 +13,7 @@ if __name__ == "__main__":
         input_dim=X_tr.shape[1],
         hidden_sizes=[16, 8],
         lr=0.01,
+        batch_size=256,
         n_epochs=200,
         loss=EconomicLoss(),
         seed=0,
