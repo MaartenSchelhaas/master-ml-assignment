@@ -3,6 +3,7 @@
 from ml_assignment.data import load_raw, train_val_split
 from ml_assignment.losses import BrierLoss
 from ml_assignment.model import MLP
+from ml_assignment.optim import SGD
 
 if __name__ == "__main__":
     X_trn, y_trn, X_test = load_raw()
@@ -12,7 +13,7 @@ if __name__ == "__main__":
     model = MLP(
         input_dim=X_tr.shape[1],
         hidden_sizes=[16, 8],
-        lr=0.01,
+        optimizer=SGD(lr=0.01),
         batch_size=256,
         n_epochs=200,
         loss=BrierLoss(),

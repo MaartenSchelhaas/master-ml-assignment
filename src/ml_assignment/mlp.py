@@ -9,7 +9,7 @@ import numpy as np
 from ml_assignment.activations import Activation
 from ml_assignment.losses import Loss
 
-def init_params(layer_sizes: list[int], seed: int | None = None) -> list[dict]:
+def init_params(layer_sizes: list[int], seed: int | None = None) -> list[dict[str, np.ndarray]]:
     """Initialize weights and biases for a fully connected network using
     Xavier (Glorot) uniform initialization: W ~ Uniform(-limit, limit) with
     limit = sqrt(6 / (n_in + n_out)), b = 0.
@@ -31,11 +31,11 @@ def init_params(layer_sizes: list[int], seed: int | None = None) -> list[dict]:
 
 
 def forward(
-    params: list[dict],
+    params: list[dict[str, np.ndarray]],
     X: np.ndarray,
     hidden_activation: Activation,
     output_activation: Activation,
-) -> tuple[np.ndarray, list[dict]]:
+) -> tuple[np.ndarray, list[dict[str, np.ndarray]]]:
     """Run the forward pass: hidden_activation on every hidden layer,
     output_activation on the output unit. Returns (p_hat, cache), where
     p_hat has shape (n,) and cache is a list with one dict per layer
@@ -67,14 +67,14 @@ def forward(
 
 
 def backward(
-    params: list[dict],
-    cache: list[dict],
+    params: list[dict[str, np.ndarray]],
+    cache: list[dict[str, np.ndarray]],
     y: np.ndarray,
     p_hat: np.ndarray,
     loss: Loss,
     hidden_activation: Activation,
     output_activation: Activation,
-) -> list[dict]:
+) -> list[dict[str, np.ndarray]]:
     """Backpropagate to get per-layer gradients.
 
     loss.grad(y, p_hat) returns dL/dp_hat, the seed gradient at the output
@@ -84,7 +84,7 @@ def backward(
     n_layers = len(params)
 
     #Create empty gradient list for the parameters.
-    grads: list[dict] = []
+    grads: list[dict[str, np.ndarray]] = []
     for i in range(n_layers):
         grads.append({})
 
