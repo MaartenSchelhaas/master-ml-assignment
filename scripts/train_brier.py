@@ -17,6 +17,7 @@ if __name__ == "__main__":
         batch_size=256,
         n_epochs=200,
         loss=BrierLoss(),
+        patience=10,
         seed=0,
     )
     history = model.fit(X_tr, y_tr, X_val, y_val)

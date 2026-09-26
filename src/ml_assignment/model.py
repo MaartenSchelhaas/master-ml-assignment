@@ -20,6 +20,7 @@ class MLP:
         batch_size: int,
         n_epochs: int,
         loss: Loss,
+        patience: int | None = None,
         seed: int | None = None,
     ):
         self.input_dim = input_dim
@@ -28,6 +29,7 @@ class MLP:
         self.batch_size = batch_size
         self.n_epochs = n_epochs
         self.loss = loss
+        self.patience = patience
         self.seed = seed
         self.hidden_activation = ReLU()
         self.output_activation = Sigmoid()
@@ -41,7 +43,7 @@ class MLP:
         y_tr: np.ndarray,
         X_val: np.ndarray | None = None,
         y_val: np.ndarray | None = None,
-    ) -> dict:
+    ) -> dict[str, list[float]]:
         """Fit the model, with the amount of epoch, and batch size for gradient calculation.
             Updates after each batch, new epoch once the training data is exhausted
             (data is reshuffled at the start of every epoch). If
@@ -57,16 +59,32 @@ class MLP:
                 (n_val,). Defaults to None.
 
         Returns:
-            dict: {"train_loss": per-epoch training loss, "val_loss": per-epoch
-                validation loss, empty if X_val/y_val weren't given}.
+            dict[str, list[float]]: {"train_loss": per-epoch training loss,
+                "val_loss": per-epoch validation loss, empty if X_val/y_val
+                weren't given}.
+
+        Note:
+            If self.patience is set, X_val/y_val are required. Training then
+            stops early once val_loss hasn't improved for self.patience
+            epochs in a row, and self.params is rolled back to whichever
+            epoch had the best val_loss, not just whatever's left after the
+            last epoch run.
         """
         assert X_tr.shape[1] == self.input_dim, (
             f"X_tr has {X_tr.shape[1]} features, model was built for {self.input_dim}"
         )
+        if self.patience is not None:
+            assert X_val is not None and y_val is not None, (
+                "patience requires X_val/y_val to know when validation loss stops improving"
+            )
 
         n = X_tr.shape[0]
         rng = np.random.default_rng(self.seed)
-        history: dict = {"train_loss": [], "val_loss": []}
+        #For plotting purposes
+        history: dict[str, list[float]] = {"train_loss": [], "val_loss": []}
+        best_val_loss = float("inf")
+        best_params = None
+        epochs_without_improvement = 0
 
         for _ in range(self.n_epochs):
             perm = rng.permutation(n)
@@ -96,8 +114,24 @@ class MLP:
                 start = end
 
             history["train_loss"].append(self.loss.value(y_tr, self.predict_proba(X_tr)))
+
             if X_val is not None and y_val is not None:
-                history["val_loss"].append(self.loss.value(y_val, self.predict_proba(X_val)))
+                val_loss = self.loss.value(y_val, self.predict_proba(X_val))
+                history["val_loss"].append(val_loss)
+
+                if self.patience is not None:
+                    if val_loss < best_val_loss:
+                        best_val_loss = val_loss
+                        best_params = mlp.copy_params(self.params)
+                        epochs_without_improvement = 0
+                    else:
+                        epochs_without_improvement += 1
+
+                    if epochs_without_improvement >= self.patience:
+                        break
+
+        if best_params is not None:
+            self.params = best_params
 
         return history
 
