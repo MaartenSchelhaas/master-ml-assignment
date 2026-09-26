@@ -10,8 +10,9 @@ DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 
 
 def load_raw() -> tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
+    """Load X_trn, y_trn, X_test from data/, as given on Canvas."""
     X_trn = pd.read_csv(DATA_DIR / "X_trn.csv")
-    y_trn = pd.read_csv(DATA_DIR / "y_trn.csv").squeeze("columns")
+    y_trn = pd.read_csv(DATA_DIR / "y_trn.csv").iloc[:, 0]
     X_test = pd.read_csv(DATA_DIR / "X_test.csv")
     return X_trn, y_trn, X_test
 
@@ -19,6 +20,8 @@ def load_raw() -> tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
 def train_val_split(
     X: pd.DataFrame, y: pd.Series, val_frac: float = 0.2, seed: int = 0
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Random train/validation split. Returns (X_tr, X_val, y_tr, y_val) as
+    plain numpy arrays, with val_frac of the rows going to validation."""
     rng = np.random.default_rng(seed)
     n = len(X)
     idx = rng.permutation(n)

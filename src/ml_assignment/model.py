@@ -67,8 +67,7 @@ class MLP:
             If self.patience is set, X_val/y_val are required. Training then
             stops early once val_loss hasn't improved for self.patience
             epochs in a row, and self.params is rolled back to whichever
-            epoch had the best val_loss, not just whatever's left after the
-            last epoch run.
+            epoch had the best val_loss.
         """
         assert X_tr.shape[1] == self.input_dim, (
             f"X_tr has {X_tr.shape[1]} features, model was built for {self.input_dim}"
