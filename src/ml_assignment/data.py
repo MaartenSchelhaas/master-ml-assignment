@@ -35,6 +35,33 @@ def train_val_split(
     )
 
 
+def outer_holdout_split(
+    X: pd.DataFrame, y: pd.Series, holdout_frac: float = 0.2, seed: int = 0
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
+    """Split off a held-out chunk with known labels, standing in for X_test
+    so a training procedure can be scored the same way it will later be
+    used for real. Keeps DataFrame/Series types (unlike train_val_split),
+    since the pool is typically resampled further downstream.
+
+    Args:
+        X (pd.DataFrame): Features, shape (n, n_features).
+        y (pd.Series): Labels, shape (n,).
+        holdout_frac (float, optional): Fraction of rows held out. Defaults
+            to 0.2.
+        seed (int, optional): Random seed for the split. Defaults to 0.
+
+    Returns:
+        tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]: (X_pool,
+            X_holdout, y_pool, y_holdout).
+    """
+    rng = np.random.default_rng(seed)
+    n = len(X)
+    idx = rng.permutation(n)
+    n_holdout = int(n * holdout_frac)
+    holdout_idx, pool_idx = idx[:n_holdout], idx[n_holdout:]
+    return X.iloc[pool_idx], X.iloc[holdout_idx], y.iloc[pool_idx], y.iloc[holdout_idx]
+
+
 def k_fold_split(
     X: pd.DataFrame, y: pd.Series, k: int = 5, seed: int = 0
 ) -> list[tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]]:
@@ -73,6 +100,26 @@ def k_fold_split(
             y.iloc[val_idx].to_numpy(),
         ))
     return splits
+
+
+def derive_seeds(master_seed: int, n: int) -> list[int]:
+    """Derive n independent, reproducible seeds from one master seed, for
+    fitting n ensemble members without correlating their random state.
+
+    Args:
+        master_seed (int): Seed the whole derivation is reproducible from.
+        n (int): Number of seeds to derive.
+
+    Returns:
+        list[int]: n independent seeds, usable directly as the seed
+            argument for train_val_split and MLP alike.
+    """
+    seed_seq = np.random.SeedSequence(master_seed)
+    child_seqs = seed_seq.spawn(n)
+    seeds = []
+    for child_seq in child_seqs:
+        seeds.append(int(child_seq.generate_state(1)[0]))
+    return seeds
 
 
 def fit_standardizer(X_tr: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
