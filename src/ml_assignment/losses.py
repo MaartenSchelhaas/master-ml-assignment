@@ -1,8 +1,7 @@
 """Loss functions used to train and evaluate the two final models.
 
 Loss is the base class: any loss just needs a value (for logging/scoring)
-and a grad (dL/dp_hat, the seed gradient mlp.backward starts from). MLP
-takes a Loss instance instead of branching on a loss name string.
+and a gradient (dL/dp_hat, the seed gradient mlp.backward starts from).
 """
 
 from abc import ABC, abstractmethod
@@ -18,7 +17,7 @@ class Loss(ABC):
 
     @abstractmethod
     def grad(self, y: np.ndarray, p_hat: np.ndarray) -> np.ndarray:
-        """dL/dp_hat, the seed gradient mlp.backward starts from."""
+        """Gradient function, used in the backpropagation"""
         raise NotImplementedError
 
 

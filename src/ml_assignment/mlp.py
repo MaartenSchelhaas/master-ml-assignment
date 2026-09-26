@@ -11,11 +11,17 @@ from ml_assignment.losses import Loss
 
 def init_params(layer_sizes: list[int], seed: int | None = None) -> list[dict[str, np.ndarray]]:
     """Initialize weights and biases for a fully connected network using
-    Xavier (Glorot) uniform initialization: W ~ Uniform(-limit, limit) with
-    limit = sqrt(6 / (n_in + n_out)), b = 0.
+    Xavier (Glorot) uniform initialization.
 
-    layer_sizes includes the input dimension and the output dimension,
-    e.g. [n_features, 16, 8, 1].
+    Args:
+        layer_sizes (list[int]): The sizes of the layers, inclduing the input
+         and output layer.
+        seed (int | None, optional): Random seed for reproducible weight
+            initialization. Defaults to None.
+
+    Returns:
+        list[dict[str, np.ndarray]]: Per-layer {"W", "b"}, one entry per
+            consecutive pair in layer_sizes.
     """
     rng = np.random.default_rng(seed)
     params = []
@@ -48,11 +54,21 @@ def forward(
     output_activation: Activation,
 ) -> tuple[np.ndarray, list[dict[str, np.ndarray]]]:
     """Run the forward pass: hidden_activation on every hidden layer,
-    output_activation on the output unit. Returns (p_hat, cache), where
-    p_hat has shape (n,) and cache is a list with one dict per layer
-    holding whatever backward needs to recompute that layer's gradients:
-    the layer's input (a_in) and pre-activation (z). """
-    #for i in len(params)
+    output_activation on the output unit.
+
+    Args:
+        params (list[dict[str, np.ndarray]]): Per-layer weights and biases.
+        X (np.ndarray): Input features, shape (n, n_features).
+        hidden_activation (Activation): Applied to every hidden layer.
+        output_activation (Activation): Applied to the output unit.
+
+    Returns:
+        tuple[np.ndarray, list[dict[str, np.ndarray]]]: (p_hat, cache).
+            Returns predicted values, and stored values for backprop, called 
+            cache. p_hat has shape (n,). cache is a list with one dict per layer
+            holding whatever backward needs to recompute that layer's
+            gradients: the layer's input (a_in) and pre-activation (z).
+    """
     n_layers = len(params)
     cache = []
     a = X
@@ -88,9 +104,22 @@ def backward(
 ) -> list[dict[str, np.ndarray]]:
     """Backpropagate to get per-layer gradients.
 
-    loss.grad(y, p_hat) returns dL/dp_hat, the seed gradient at the output
-    layer. backward doesn't need to know which loss it is, or how it's
-    weighted internally, only its derivative w.r.t. p_hat.
+    loss.grad(y, p_hat) returns dL/dp_hat, the first gradient at the output
+    layer. 
+    Args:
+        params (list[dict[str, np.ndarray]]): Per-layer {"W", "b"}.
+        cache (list[dict[str, np.ndarray]]): Per-layer {"a_in", "z"}, as
+            returned by forward.
+        y (np.ndarray): True labels (0/1), shape (n,).
+        p_hat (np.ndarray): Predicted probabilities, shape (n,), as
+            returned by forward.
+        loss (Loss): Provides dL/dp_hat via loss.grad(y, p_hat).
+        hidden_activation (Activation): Must match what forward used.
+        output_activation (Activation): Must match what forward used.
+
+    Returns:
+        list[dict[str, np.ndarray]]: Per-layer {"dW", "db"}, same shape and
+            order as params.
     """
     n_layers = len(params)
 
@@ -111,6 +140,7 @@ def backward(
             grads[i] = {"dW": dW, "db": db}
 
         else:
+            #Recursive gradient calculation after the first gradient
             W_next = params[i + 1]["W"]
             delta = (delta @ W_next.T) * hidden_activation.grad(cache[i]["z"])
             dW = cache[i]["a_in"].T @ delta

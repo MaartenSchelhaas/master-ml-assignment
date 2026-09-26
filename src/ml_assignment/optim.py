@@ -21,7 +21,7 @@ class SGD(Optimizer):
         self.lr = lr
 
     def step(self, params: list[dict[str, np.ndarray]], grads: list[dict[str, np.ndarray]]) -> None:
-        """Plain SGD update: W -= lr * dW, b -= lr * db, per layer.
+        """Plain SGD update.
 
         Args:
             params (list[dict[str, np.ndarray]]): per-layer {"W", "b"}, same

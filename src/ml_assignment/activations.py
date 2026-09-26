@@ -1,6 +1,5 @@
-"""Activation functions, paired with their own derivative so forward and
-backward always use a matched (value, grad) pair instead of relying on
-separate functions kept in sync by naming convention."""
+"""Activation functions class, to be used in the forward pass and 
+backward pass."""
 
 from abc import ABC, abstractmethod
 
