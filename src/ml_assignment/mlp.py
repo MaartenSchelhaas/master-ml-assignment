@@ -4,10 +4,10 @@ Only numpy / scipy.special are used here. No autograd, no ready-made NN
 implementations, per the assignment's implementation requirements.
 """
 
-from collections.abc import Callable
-
 import numpy as np
-from scipy.special import expit
+
+from ml_assignment.activations import Activation
+from ml_assignment.losses import Loss
 
 def init_params(layer_sizes: list[int], seed: int | None = None) -> list[dict]:
     """Initialize weights and biases for a fully connected network using
@@ -30,36 +30,17 @@ def init_params(layer_sizes: list[int], seed: int | None = None) -> list[dict]:
     return params
 
 
-def relu(z: np.ndarray) -> np.ndarray:
-    """Elementwise ReLU, used for every hidden layer's activation."""
-    return np.maximum(z,0)
-
-
-
-def relu_grad(z: np.ndarray) -> np.ndarray:
-    """Elementwise derivative of ReLU at the pre-activation z, 1 where
-    z > 0 and 0 otherwise."""
-    return (z > 0).astype(float)
-
-
-def sigmoid(z: np.ndarray) -> np.ndarray:
-    """Elementwise sigmoid via scipy.special.expit, used on the output
-    unit so predictions are valid probabilities."""
-    return expit(z)
-
-
-def sigmoid_grad(z: np.ndarray) -> np.ndarray:
-    """Elementwise derivative of sigmoid at the pre-activation z."""
-    s = sigmoid(z)
-    return s * (1 - s)
-
-
-def forward(params: list[dict], X: np.ndarray) -> tuple[np.ndarray, list[dict]]:
-    """Run the forward pass: ReLU on every hidden layer, sigmoid on the
-    output unit. Returns (p_hat, cache), where p_hat has shape (n,) and
-    cache is a list with one dict per layer holding whatever backward
-    needs to recompute that layer's gradients, e.g. the layer's input,
-    pre-activation, and activation."""
+def forward(
+    params: list[dict],
+    X: np.ndarray,
+    hidden_activation: Activation,
+    output_activation: Activation,
+) -> tuple[np.ndarray, list[dict]]:
+    """Run the forward pass: hidden_activation on every hidden layer,
+    output_activation on the output unit. Returns (p_hat, cache), where
+    p_hat has shape (n,) and cache is a list with one dict per layer
+    holding whatever backward needs to recompute that layer's gradients:
+    the layer's input (a_in) and pre-activation (z). """
     #for i in len(params)
     n_layers = len(params)
     cache = []
@@ -68,15 +49,15 @@ def forward(params: list[dict], X: np.ndarray) -> tuple[np.ndarray, list[dict]]:
     for i in range(n_layers):
         W = params[i]["W"]
         b = params[i]["b"]
-        z = a @ W + b 
+        z = a @ W + b
 
         if i < n_layers - 1:
-            a_next = relu(z)
+            a_next = hidden_activation.value(z)
 
-        else: 
-            a_next = sigmoid(z)
+        else:
+            a_next = output_activation.value(z)
 
-        cache.append({"a_in": a, "z": z, "a_out": a_next})
+        cache.append({"a_in": a, "z": z})
         a = a_next
 
     #Return predictions as vector
@@ -89,17 +70,20 @@ def backward(
     params: list[dict],
     cache: list[dict],
     y: np.ndarray,
-    loss_grad: Callable[[np.ndarray, np.ndarray], np.ndarray],
+    p_hat: np.ndarray,
+    loss: Loss,
+    hidden_activation: Activation,
+    output_activation: Activation,
 ) -> list[dict]:
     """Backpropagate to get per-layer gradients.
 
-    loss_grad(y, p_hat) returns dL/dp_hat, the seed gradient at the output
-    layer. backward doesn't need to know which loss produced it, or how
-    it's weighted internally, only its derivative w.r.t. p_hat.
+    loss.grad(y, p_hat) returns dL/dp_hat, the seed gradient at the output
+    layer. backward doesn't need to know which loss it is, or how it's
+    weighted internally, only its derivative w.r.t. p_hat.
     """
     n_layers = len(params)
 
-    #Create empty gradient list for the parameters. 
+    #Create empty gradient list for the parameters.
     grads: list[dict] = []
     for i in range(n_layers):
         grads.append({})
@@ -107,18 +91,17 @@ def backward(
     for i in range(n_layers - 1, -1, -1):
         if i == n_layers - 1:
             #Last layer, calculate loss
-            p_hat = cache[i]["a_out"].reshape(-1)
-            dL_dp_hat = loss_grad(y, p_hat)
-            delta = dL_dp_hat.reshape(-1, 1) * sigmoid_grad(cache[i]["z"])
-            # a_in = n x units_{i-1}, delta = n x units_{i} -> 
-            #Transpose a_in to get units_{i-1} x units_{i} matrix. 
+            dL_dp_hat = loss.grad(y, p_hat)
+            delta = dL_dp_hat.reshape(-1, 1) * output_activation.grad(cache[i]["z"])
+            # a_in = n x units_{i-1}, delta = n x units_{i} ->
+            #Transpose a_in to get units_{i-1} x units_{i} matrix.
             dW = cache[i]["a_in"].T @ delta
             db = delta.sum(axis=0)
             grads[i] = {"dW": dW, "db": db}
 
         else:
             W_next = params[i + 1]["W"]
-            delta = (delta @ W_next.T) * relu_grad(cache[i]["z"])
+            delta = (delta @ W_next.T) * hidden_activation.grad(cache[i]["z"])
             dW = cache[i]["a_in"].T @ delta
             db = delta.sum(axis=0)
             grads[i] = {"dW": dW, "db": db}
