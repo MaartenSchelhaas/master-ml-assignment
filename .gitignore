@@ -219,7 +219,7 @@ __marimo__/
 
 # Assignment data and outputs (not for GitHub)
 /data/*.csv
-/predictions.npy
+/output/
 report.pdf
 
 # Local planning docs
