@@ -30,6 +30,17 @@ def init_params(layer_sizes: list[int], seed: int | None = None) -> list[dict[st
     return params
 
 
+def copy_params(params: list[dict[str, np.ndarray]]) -> list[dict[str, np.ndarray]]:
+    """Deep copy of a params list, used by early stopping to snapshot the
+    best-so-far parameters without aliasing the arrays the optimizer keeps
+    updating in place."""
+    copied = []
+    n_layers = len(params)
+    for i in range(n_layers):
+        copied.append({"W": params[i]["W"].copy(), "b": params[i]["b"].copy()})
+    return copied
+
+
 def forward(
     params: list[dict[str, np.ndarray]],
     X: np.ndarray,
