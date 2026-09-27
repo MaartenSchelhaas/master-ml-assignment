@@ -10,14 +10,13 @@ from ml_assignment.losses import BrierLoss, EconomicLoss, Loss
 from ml_assignment.model import MLP
 from ml_assignment.optim import SGD, Adam, Optimizer
 
-hidden_sizes_options = [[8], [16, 8], [32, 16]]
+hidden_sizes_options = [[8], [16], [16, 8], [32, 16]]
 # lr ranges differ a lot per optimizer (Adam needs much smaller lr than SGD),
 # so lr is tuned per optimizer instead of over one shared range.
 lr_options = {
-    "sgd": [0.1, 0.01],
-    "adam": [0.01, 0.001],
+    "adam": [0.01, 0.003, 0.001],
 }
-batch_size_options = [32, 128]
+batch_size_options = [32, 64, 128]
 n_epochs = 500
 patience = 20
 k = 5
