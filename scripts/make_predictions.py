@@ -13,8 +13,8 @@ from ml_assignment.model import MLP
 from ml_assignment.optim import SGD, Adam, Optimizer
 
 # hyperparameters picked by scripts/tune.py, one config per final model
-brier_config = {"hidden_sizes": [16, 8], "lr": 0.01, "batch_size": 32, "optimizer": "adam"}
-econ_config = {"hidden_sizes": [8], "lr": 0.003, "batch_size": 32, "optimizer": "adam"}
+brier_config = {"hidden_sizes": [8], "lr": 0.03, "batch_size": 64, "optimizer": "adam"}
+econ_config = {"hidden_sizes": [8], "lr": 0.003, "batch_size": 128, "optimizer": "adam"}
 
 n_epochs = 300
 patience = 30
