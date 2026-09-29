@@ -1,7 +1,7 @@
 """Loss functions used to train and evaluate the two final models.
 
 Loss is the base class: any loss just needs a value (for logging/scoring)
-and a gradient (dL/dp_hat, the seed gradient mlp.backward starts from).
+and a gradient.
 """
 
 from abc import ABC, abstractmethod
@@ -12,7 +12,7 @@ import numpy as np
 class Loss(ABC):
     @abstractmethod
     def value(self, y: np.ndarray, p_hat: np.ndarray) -> float:
-        """Scalar loss value, used for logging/evaluation."""
+        """Scalar loss value."""
         raise NotImplementedError
 
     @abstractmethod

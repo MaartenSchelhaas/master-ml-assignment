@@ -1,7 +1,6 @@
 """Public API: the MLP class. This is what scripts/*.py and hyperparameter
 tuning code call, everything else in this package is an implementation
-detail behind it. Plain constructor kwargs, no config object, src stays
-agnostic to however external code chooses to bundle/sweep hyperparameters."""
+detail behind it."""
 
 import numpy as np
 
@@ -44,11 +43,7 @@ class MLP:
         X_val: np.ndarray | None = None,
         y_val: np.ndarray | None = None,
     ) -> dict[str, list[float]]:
-        """Fit the model, with the amount of epoch, and batch size for gradient calculation.
-            Updates after each batch, new epoch once the training data is exhausted
-            (data is reshuffled at the start of every epoch). If
-            batch_size = n, batch gradient descent, if batch_size = 1, sgd, anything
-            in between: mini-batch.
+        """Fit the model with given hyperparameters. 
         Args:
             X_tr (np.ndarray): Training features, shape (n_train, input_dim).
             y_tr (np.ndarray): Training labels (0/1), shape (n_train,).
@@ -62,12 +57,6 @@ class MLP:
             dict[str, list[float]]: {"train_loss": per-epoch training loss,
                 "val_loss": per-epoch validation loss, empty if X_val/y_val
                 weren't given}.
-
-        Note:
-            If self.patience is set, X_val/y_val are required. Training then
-            stops early once val_loss hasn't improved for self.patience
-            epochs in a row, and self.params is rolled back to whichever
-            epoch had the best val_loss.
         """
         assert X_tr.shape[1] == self.input_dim, (
             f"X_tr has {X_tr.shape[1]} features, model was built for {self.input_dim}"

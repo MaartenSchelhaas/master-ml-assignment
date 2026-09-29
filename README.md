@@ -1,64 +1,40 @@
-# FEM21045 ML Assignment
+# Loan Default Prediction
 
-Two hand-rolled neural networks predicting default probability: one trained on the
-Brier score, one on the asymmetric economic loss (defaults weighted 3x).
+Two neural networks, written from scratch in numpy, predicting loan default probability: one trained on the Brier score, one on an asymmetric economic 
+loss that weights missed defaults 3x over false alarms.
 
-## Setup
-
-Install [uv](https://docs.astral.sh/uv/) if you don't have it, then from the repo root:
+## Running
 
 ```
-uv sync
-```
-
-This creates a `.venv` and installs everything in `pyproject.toml`. No need to
-`pip install` anything by hand, and no need to manually create or activate a
-virtualenv, `uv run` (below) handles that.
-
-To add a new dependency later:
-
-```
-uv add <package>
-```
-
-This updates `pyproject.toml` and `uv.lock` automatically, commit both.
-
-## Data
-
-Download `X_trn.csv`, `y_trn.csv`, and `X_test.csv` from Canvas and put them in
-`data/`. That folder is gitignored, don't commit the data.
-
-## Running things
-
-Prefix any Python command with `uv run` so it uses the project's environment:
-
-```
-uv run python scripts/train_brier.py
-uv run python scripts/train_econ.py
-uv run python scripts/make_predictions.py
-uv run jupyter lab
+uv run python scripts/tune.py                        # k-fold grid search, prints best config per loss
+uv run python scripts/make_predictions.py             # trains both final models, writes predictions.npy
+uv run python scripts/make_predictions_ensembling.py  # same, as a 20-member ensemble
 ```
 
 ## Structure
 
 ```
-data/                   CSVs from Canvas (gitignored)
+data/                              training/test CSVs
 src/ml_assignment/
-  mlp.py                forward pass, backprop, parameter updates (numpy only)
-  losses.py             Brier score and economic loss
-  data.py                loading and train/validation splitting
+  mlp.py                           forward pass, backprop, parameter updates
+  model.py                         MLP class: fit/predict_proba API
+  activations.py                   ReLU, Sigmoid
+  losses.py                        Brier score, economic loss
+  optim.py                         SGD, Adam
+  data.py                          loading, one-hot encoding, standardizing, splitting
 scripts/
-  train_brier.py        trains the Brier-score model
-  train_econ.py          trains the economic-loss model
-  make_predictions.py   writes predictions.npy (n_test, 2): col 0 = Brier model,
-                         col 1 = economic-loss model
-report.tex              LaTeX report template (add from Canvas)
+  tune.py                          hyperparameter search
+  make_predictions.py              final models -> predictions.npy
+  make_predictions_ensembling.py   final models as an ensemble -> predictions_ensemble.npy
+output/                            metrics, plots, predictions (gitignored)
+docs/main.tex                      report
 ```
 
-## Rules to keep in mind
+## Architecture
 
-- Forward pass, loss, gradients and parameter updates must be written by us using
-  plain numpy/scipy array arithmetic, no autograd, no sklearn/torch/etc.
-- Never touch `X_test.csv` for model selection, tuning, or preprocessing decisions,
-  validation only.
-- Every preprocessing transform must be fit on the training data only.
+Fully-connected MLP with ReLU hidden layers and a sigmoid output producing
+the default probability. Hidden-layer sizes, learning rate, batch size and
+optimizer are chosen per loss by 5-fold cross-validation. Nominal
+categorical features are one-hot encoded, everything else standardized
+(fit on training data only), and training uses mini-batch gradient descent
+with early stopping on a validation split.

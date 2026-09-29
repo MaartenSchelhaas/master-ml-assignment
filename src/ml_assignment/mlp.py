@@ -1,7 +1,4 @@
 """Hand-rolled multilayer perceptron: forward pass, loss, gradients, updates.
-
-Only numpy / scipy.special are used here. No autograd, no ready-made NN
-implementations, per the assignment's implementation requirements.
 """
 
 import numpy as np
@@ -11,7 +8,7 @@ from ml_assignment.losses import Loss
 
 def init_params(layer_sizes: list[int], seed: int | None = None) -> list[dict[str, np.ndarray]]:
     """Initialize weights and biases for a fully connected network using
-    Xavier (Glorot) uniform initialization.
+    Xavier uniform initialization.
 
     Args:
         layer_sizes (list[int]): The sizes of the layers, inclduing the input

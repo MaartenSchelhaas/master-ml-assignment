@@ -60,28 +60,11 @@ def accuracy(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     return float(np.mean(y_true == y_pred))
 
 
-def precision_from_cm(cm: np.ndarray) -> float:
-    """Precision"""
-    fp = cm[0][1]
-    tp = cm[1][1]
-    return float(tp / (tp + fp)) if (tp + fp) > 0 else 0.0
-
-
 def recall_from_cm(cm: np.ndarray) -> float:
     """Recall:The share of actual defaults the model actually flags."""
     fn = cm[1][0]
     tp = cm[1][1]
     return float(tp / (tp + fn)) if (tp + fn) > 0 else 0.0
-
-
-def f2_from_cm(cm: np.ndarray) -> float:
-    """F2 score"""
-    p = precision_from_cm(cm)
-    r = recall_from_cm(cm)
-    if p + r == 0:
-        return 0.0
-    beta_sq = 4
-    return (1 + beta_sq) * p * r / (beta_sq * p + r)
 
 
 def plot_histories(histories: dict[str, dict[str, list[float]]], path: Path) -> None:
@@ -113,9 +96,7 @@ def plot_histories(histories: dict[str, dict[str, list[float]]], path: Path) -> 
 
 def report(name: str, y_val: np.ndarray, p_val: np.ndarray) -> str:
     """Build the loss / confusion matrix / accuracy text block for one
-    model. Both losses are reported regardless of which one the model was
-    trained on, so the two final models can be compared on the same terms.
-    """
+    model."""
     y_pred = (p_val >= 0.5).astype(int)
     cm = confusion_matrix(y_val, y_pred)
     return (
@@ -124,9 +105,7 @@ def report(name: str, y_val: np.ndarray, p_val: np.ndarray) -> str:
         f"economic loss: {EconomicLoss().value(y_val, p_val):.4f}\n"
         f"confusion matrix [[tn, fp], [fn, tp]]:\n{cm}\n"
         f"accuracy: {accuracy(y_val, y_pred):.4f}\n"
-        f"precision: {precision_from_cm(cm):.4f}\n"
         f"recall: {recall_from_cm(cm):.4f}\n"
-        f"f2: {f2_from_cm(cm):.4f}\n"
     )
 
 
@@ -174,8 +153,7 @@ if __name__ == "__main__":
     OUTPUT_DIR.mkdir(exist_ok=True)
 
     # Report: fit on a train/val split resampled from a pool that excludes
-    # a held-out chunk standing in for X_test, so the report is scored on
-    # data neither training nor early stopping ever touched.
+    # a held-out chunk standing in for X_test.
     X_pool, X_holdout, y_pool, y_holdout = outer_holdout_split(X_trn, y_trn, outer_holdout_frac, outer_seed)
     p_holdout_brier, history_brier = fit_and_predict(brier_config, BrierLoss(), X_pool, y_pool, X_holdout)
     p_holdout_econ, history_econ = fit_and_predict(econ_config, EconomicLoss(), X_pool, y_pool, X_holdout)
