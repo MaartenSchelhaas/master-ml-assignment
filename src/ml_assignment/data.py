@@ -95,9 +95,7 @@ def outer_holdout_split(
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
     """Split off a held-out chunk with known labels, standing in for X_test
     so a training procedure can be scored the same way it will later be
-    used for real. Keeps DataFrame/Series types (unlike train_val_split),
-    since the pool is typically resampled further downstream.
-
+    used for real. 
     Args:
         X (pd.DataFrame): Features, shape (n, n_features).
         y (pd.Series): Labels, shape (n,).
@@ -178,33 +176,14 @@ def derive_seeds(master_seed: int, n: int) -> list[int]:
 
 
 def fit_standardizer(X_tr: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Compute per-feature mean and standard deviation from training data.
-
-    Args:
-        X_tr (np.ndarray): Training features, shape (n_train, n_features).
-
-    Returns:
-        tuple[np.ndarray, np.ndarray]: (mean, std), each shape
-            (n_features,), to be passed into standardize for X_tr, X_val
-            and X_test alike.
-    """
+    """Per-feature (mean, std) from training data, to reuse via standardize
+    on X_tr, X_val and X_test alike."""
     mean = X_tr.mean(axis=0)
     std = X_tr.std(axis=0)
     return mean, std
 
 
 def standardize(X: np.ndarray, mean: np.ndarray, std: np.ndarray) -> np.ndarray:
-    """Apply z-score standardization: (X - mean) / std, elementwise per
-    feature.
-
-    Args:
-        X (np.ndarray): Features to standardize, shape (n, n_features).
-        mean (np.ndarray): Per-feature mean, as returned by
-            fit_standardizer.
-        std (np.ndarray): Per-feature standard deviation, as returned by
-            fit_standardizer.
-
-    Returns:
-        np.ndarray: Standardized features, same shape as X.
-    """
+    """Z-score standardization with a given (mean, std), as returned by
+    fit_standardizer."""
     return (X - mean) / std

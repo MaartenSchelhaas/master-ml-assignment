@@ -74,10 +74,7 @@ def evaluate_config(
         patience (int): Early stopping patience, same for every config.
 
     Returns:
-        tuple[float, list[int]]: (average val loss over the folds, the
-            epoch each fold actually stopped at, i.e. len(history["val_loss"])
-            for that fold, so a run stuck at 1-2 epochs every time is
-            visibly different from one that used most of its patience).
+        tuple[float, list[int]]: average val loss over the folds.
     """
     fold_val_losses = []
     stop_epochs = []

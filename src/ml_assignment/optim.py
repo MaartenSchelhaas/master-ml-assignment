@@ -1,5 +1,4 @@
-"""Parameter update rules, kept separate from mlp.py so the forward/backward
-math has no notion of a learning rate. Optimizer is the base class: MLP only
+"""Parameter update rules. Optimizer is the base class: MLP only
 needs an object with a step(params, grads) method, it doesn't need to know
 which update rule that is, so other rules (momentum, etc.) can be added
 later as another Optimizer subclass without touching model.py."""
