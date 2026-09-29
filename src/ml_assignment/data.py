@@ -8,12 +8,67 @@ import pandas as pd
 
 DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 
+# Per the professor's clarification, these columns are nominal categorical
+# (no meaningful order), so they get one-hot encoded in load_raw. The
+# ordinal categorical columns (X03, X06, X07, X15, X17, X22) keep their
+# integer codes and are standardized like the numeric columns, since their
+# order is meaningful and one-hot encoding would throw it away.
+NOMINAL_COLUMNS = ["X04", "X13", "X16"]
+
+
+def fit_one_hot(X: pd.DataFrame, columns: list[str]) -> dict[str, list]:
+    """Record each nominal column's category levels from training data.
+
+    Args:
+        X (pd.DataFrame): Training features.
+        columns (list[str]): Names of the nominal columns to encode.
+
+    Returns:
+        dict[str, list]: column name -> sorted list of category levels seen
+            in X, to be passed into one_hot_encode for X_trn/X_test alike.
+    """
+    categories = {}
+    for col in columns:
+        categories[col] = sorted(X[col].unique())
+    return categories
+
+
+def one_hot_encode(X: pd.DataFrame, columns: list[str], categories: dict[str, list]) -> pd.DataFrame:
+    """Replace each nominal column with indicator columns for its known
+    categories (one dropped per column to avoid redundancy). A value not in
+    categories[col] ends up all-zero across that column's indicators.
+
+    Args:
+        X (pd.DataFrame): Features to encode.
+        columns (list[str]): Names of the nominal columns to encode.
+        categories (dict[str, list]): Category levels per column, as
+            returned by fit_one_hot.
+
+    Returns:
+        pd.DataFrame: X with each nominal column replaced by its indicator
+            columns.
+    """
+    X = X.copy()
+    for col in columns:
+        categorical_column = pd.Categorical(X[col], categories=categories[col])
+        dummies = pd.get_dummies(categorical_column, prefix=col, drop_first=True).astype(float)
+        X = pd.concat([X.drop(columns=col), dummies], axis=1)
+    return X
+
 
 def load_raw() -> tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
-    """Load X_trn, y_trn, X_test from data/, as given on Canvas."""
+    """Load X_trn, y_trn, X_test from data/, as given on Canvas. Nominal
+    categorical columns are one-hot encoded here, using category levels
+    fit on X_trn only, so every downstream caller gets consistent columns
+    without needing to know about the encoding."""
     X_trn = pd.read_csv(DATA_DIR / "X_trn.csv")
     y_trn = pd.read_csv(DATA_DIR / "y_trn.csv").iloc[:, 0]
     X_test = pd.read_csv(DATA_DIR / "X_test.csv")
+
+    categories = fit_one_hot(X_trn, NOMINAL_COLUMNS)
+    X_trn = one_hot_encode(X_trn, NOMINAL_COLUMNS, categories)
+    X_test = one_hot_encode(X_test, NOMINAL_COLUMNS, categories)
+
     return X_trn, y_trn, X_test
 
 
