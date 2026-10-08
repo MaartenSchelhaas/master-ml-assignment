@@ -1,4 +1,4 @@
-"""Produce predictions.npy: shape (n_test, 2), column 0 = Brier model,
+"""Produce predictions_normal.npy: shape (n_test, 2), column 0 = Brier model,
 column 1 = economic-loss model, same row order as X_test.csv. Also writes
 each model's validation confusion matrix and metrics."""
 
@@ -175,7 +175,7 @@ if __name__ == "__main__":
     assert np.all(np.isfinite(predictions))
     assert np.all((predictions >= 0) & (predictions <= 1))
 
-    np.save(OUTPUT_DIR / "predictions.npy", predictions)
+    np.save(OUTPUT_DIR / "predictions_normal.npy", predictions)
 
-    print(f"saved predictions.npy with shape {predictions.shape} to {OUTPUT_DIR}")
+    print(f"saved predictions_normal.npy with shape {predictions.shape} to {OUTPUT_DIR}")
     print(metrics_text)

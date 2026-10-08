@@ -7,8 +7,8 @@ loss that weights missed defaults 3x over false alarms.
 
 ```
 uv run python scripts/tune.py                        # k-fold grid search, prints best config per loss
-uv run python scripts/make_predictions.py             # trains both final models, writes predictions.npy
-uv run python scripts/make_predictions_ensembling.py  # same, as a 20-member ensemble
+uv run python scripts/make_predictions.py             # trains both final models, writes predictions_normal.npy
+uv run python scripts/make_predictions_ensembling.py  # same, as a 20-member ensemble -> predictions.npy
 ```
 
 ## Structure
@@ -24,8 +24,8 @@ src/ml_assignment/
   data.py                          loading, one-hot encoding, standardizing, splitting
 scripts/
   tune.py                          hyperparameter search
-  make_predictions.py              final models -> predictions.npy
-  make_predictions_ensembling.py   final models as an ensemble -> predictions_ensemble.npy
+  make_predictions.py              final models -> predictions_normal.npy
+  make_predictions_ensembling.py   final models as an ensemble -> predictions.npy
 output/                            metrics, plots, predictions (gitignored)
 docs/main.tex                      report
 ```

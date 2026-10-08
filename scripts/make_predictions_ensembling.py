@@ -1,4 +1,4 @@
-"""Produce predictions.npy the same way as make_predictions.py, but each
+"""Produce predictions.npy (the one to hand in) the same way as make_predictions.py, but each
 final model is an ensemble: fit n_ensemble times on independently resampled
 train/val splits (same hyperparameters every time, only the seed varies),
 then average the n_ensemble predictions. Reduces variance from any one
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     assert np.all(np.isfinite(predictions))
     assert np.all((predictions >= 0) & (predictions <= 1))
 
-    np.save(OUTPUT_DIR / "predictions_ensemble.npy", predictions)
+    np.save(OUTPUT_DIR / "predictions.npy", predictions)
 
-    print(f"saved predictions_ensemble.npy with shape {predictions.shape} to {OUTPUT_DIR}")
+    print(f"saved predictions.npy with shape {predictions.shape} to {OUTPUT_DIR}")
     print(metrics_text)
